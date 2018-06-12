@@ -1,4 +1,4 @@
-# manifold_mixup
+# Manifold_mixup
 This repo consists code for the paper Manifold Mixup: Encouraging Meaningful
 On-Manifold Interpolation as a Regularizer.
 
