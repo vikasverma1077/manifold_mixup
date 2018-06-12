@@ -1,7 +1,7 @@
 ### Requirements
-This code has been tested with \\
-python 2.7.9
-torch 0.3.1
+This code has been tested with  
+python 2.7.9  
+torch 0.3.1  
 torchvision 0.2.0
 
 ### Data loading
