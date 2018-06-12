@@ -1,5 +1,10 @@
+### Requirements
+This code has been tested with  
+python 2.7.9  
+torch 0.3.1  
+torchvision 0.2.0
 
-### How to run Semi-supervised experiments
+### Data Preprocessing
 
 Run the script python cifar10_zca.py to compute and save the ZCA for CIFAR10 in the folder ../data/cifar10/ 
 
