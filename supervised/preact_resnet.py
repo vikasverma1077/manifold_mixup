@@ -106,7 +106,6 @@ class PreActResNet(nn.Module):
         out = x
 
         if lam is not None:
-            lam = torch.max(lam, 1-lam)
             if target_reweighted is None:
                 target_reweighted = to_one_hot(target,self.num_classes)
             else:
