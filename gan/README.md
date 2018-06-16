@@ -29,6 +29,8 @@ The `exps` folder contains the experiments needed to reproduce the experiments i
 
 ### How to evaluate
 
+TODO: coming soon!
+
 ### Additional details
 
 An experiment is defined within a bash script, such as the ones you see in the `exps` folder. Here is an example of one:
