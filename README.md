@@ -7,7 +7,7 @@ of data augmentation by using a deep network’s learned representations as a wa
 data points for training. Some real examples of this kind of interpolation from our model are seen in below figure. 
 
 <p align="center">
-    <img src="assets/what-to-store.png" height="300">
+    <img src="interpolation_hidden_2.png" height="300">
 </p>
 
 The repo consist of three subfolders for Supervised Learning, Semi-Supervised Learning and GAN experiments. Each subfolder is self-contained (can be used independently of the other subfolders). Each subfolder has its own instruction on "How to run" in its README.md file.
