@@ -12,7 +12,7 @@ import torchvision.datasets as datasets
 from torch.autograd import Variable, grad
 from torchvision.utils import save_image
 import os
-slurm_name = os.environ["SLURM_JOB_ID"]
+#slurm_name = os.environ["SLURM_JOB_ID"]
 from utils import to_var
 from torch.autograd import grad
 from torch.nn.modules import NLLLoss
@@ -34,8 +34,10 @@ parser.add_argument('--epochs', type=int, default=1200, metavar='E',
                     help='number of epochs')
 parser.add_argument('--batch_size', type=int, default=128, metavar='B',
                     help='batch size')
-parser.add_argument('--labels_per_class', type=int, default=5000, metavar='NL',
+parser.add_argument('--labels_per_class', type=int, default=4500, metavar='NL',
                     help='labels_per_class')
+parser.add_argument('--valid_labels_per_class', type=int, default=500, metavar='NL',
+                    help='validation labels per class')
 
 parser.add_argument('--mixup', action='store_true', default=False, 
                     help='whether to use mixup or not')
@@ -47,7 +49,6 @@ parser.add_argument('--gammas', type=float, nargs='+', default=[0.1, 0.1], help=
 parser.add_argument('--mixup_hidden', action='store_true', default=False)
 
 parser.add_argument('--model_type', type=str, default='PreActResNet18', choices=['ResNet18', 'ResNet34', 'ResNet50', 'ResNet101', 'ResNet152', 'PreActResNet18', 'PreActResNet34', 'PreActResNet152'])
-parser.add_argument('--fraction_validation', type=float, default=0.0, help = 'fraction of data to be used as validation, value can be between 0 and 1')
 parser.add_argument('--weight_decay', type=float, default=1e-4)
 parser.add_argument('--initial_channels', type=int, default=64, choices=(16,64))
 parser.add_argument('--nesterov', type=bool, default=True)
@@ -91,14 +92,14 @@ if dataname=="cifar10":
     IMAGE_LENGTH = 32
     NUM_CHANNELS = 3
     data_source_dir = '../data/cifar10/'
-    train_loader, valid_loader, _ , test_loader, num_classes = load_data_subset(args.data_transform_type, args.batch_size, 2 ,'cifar10', data_source_dir, args.fraction_validation, labels_per_class = args.labels_per_class)
+    train_loader, valid_loader, _ , test_loader, num_classes =load_data_subset(1, args.batch_size, 2 ,'cifar10', data_source_dir, labels_per_class = args.labels_per_class , valid_labels_per_class = args.valid_labels_per_class)
     validation_loader = test_loader
 
 elif dataname=="cifar100":
     IMAGE_LENGTH = 32
     NUM_CHANNELS = 3
     data_source_dir = '../data/cifar100/'
-    train_loader, valid_loader, _ , test_loader, num_classes = load_data_subset(1, args.batch_size, 2 ,'cifar100', data_source_dir, args.fraction_validation, labels_per_class = args.labels_per_class)
+    train_loader, valid_loader, _ , test_loader, num_classes =load_data_subset(1, args.batch_size, 2 ,'cifar100', data_source_dir, labels_per_class = args.labels_per_class , valid_labels_per_class = args.valid_labels_per_class)
     validation_loader = test_loader
 
 def plot(exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_list):
@@ -173,6 +174,9 @@ for epoch in range(args.epochs):
     total =0
     C.train()
     for i, (input, target) in enumerate(train_loader):
+            #print (input.shape)
+            #print (target.shape)
+            #break
             if args.mixup:
                 lam = mixup_data(args.mixup_alpha)
                 if args.cuda:
@@ -202,8 +206,8 @@ for epoch in range(args.epochs):
             total += target.size(0)
     train_loss = train_loss/total
     train_loss_list.append(train_loss)
-    print epoch, "======epoch========"
-    print 'Train:loss= {:.3f} accuracy={:.3f}%'.format(train_loss,  100.*correct/total)
+    print (epoch, "======epoch========")
+    print ('Train:loss= {:.3f} accuracy={:.3f}%'.format(train_loss,  100.*correct.item()/float(total)))
     
     C.eval()
     
@@ -226,7 +230,7 @@ for epoch in range(args.epochs):
 
         t_loss /= total
         loss_lst.append(t_loss)
-        t_accuracy = 100. * correct / total
+        t_accuracy = 100. * correct.item() / float(total)
         acc_lst.append(t_accuracy)
 
         return t_loss, t_accuracy
@@ -235,10 +239,10 @@ for epoch in range(args.epochs):
     if args.fraction_validation > 0.0:
         valid_loss, valid_accuracy = run_from_loader(valid_loader)
         out_str = 'Valid: loss={:.4f}, accuracy={:.3f}%'.format(valid_loss, valid_accuracy)
-        print out_str
+        print (out_str)
     test_loss, test_accuracy = run_from_loader(test_loader, test_loss_list, test_acc_list)
     out_str = 'Test: loss={:.4f}, accuracy={:.3f}%'.format(test_loss, test_accuracy)
-    print out_str
+    print (out_str)
 
     if args.fraction_validation > 0.0:
         if valid_accuracy > best_val_acc:
@@ -246,14 +250,14 @@ for epoch in range(args.epochs):
             best_test_acc = test_accuracy
     
         out_str = 'At best val accuracy={:.3f}%'.format(best_val_acc)
-        print out_str
+        print (out_str)
         out_str = 'Best Test accuracy={:.3f}%'.format(best_test_acc)
-        print out_str
+        print (out_str)
     else:
         if test_accuracy > best_test_acc:
             best_test_acc = test_accuracy
         out_str = 'Best Test accuracy={:.3f}%'.format(best_test_acc)
-        print out_str
+        print (out_str)
  
     if args.run_analytical:
         run_test_with_mixup(args, C, test_loader,mix_rate=0.5,mix_layer=0)
