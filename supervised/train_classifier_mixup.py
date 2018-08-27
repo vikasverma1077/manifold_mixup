@@ -12,7 +12,7 @@ import torchvision.datasets as datasets
 from torch.autograd import Variable, grad
 from torchvision.utils import save_image
 import os
-#slurm_name = os.environ["SLURM_JOB_ID"]
+slurm_name = os.environ["SLURM_JOB_ID"]
 from utils import to_var
 from torch.autograd import grad
 from torch.nn.modules import NLLLoss
@@ -34,12 +34,12 @@ parser.add_argument('--epochs', type=int, default=1200, metavar='E',
                     help='number of epochs')
 parser.add_argument('--batch_size', type=int, default=128, metavar='B',
                     help='batch size')
-parser.add_argument('--labels_per_class', type=int, default=4500, metavar='NL',
-                    help='labels_per_class')
-parser.add_argument('--valid_labels_per_class', type=int, default=500, metavar='NL',
+parser.add_argument('--labels_per_class', type=int, default=4500,
+                    help='labels per class  for training')
+parser.add_argument('--valid_labels_per_class', type=int, default=500,
                     help='validation labels per class')
 
-parser.add_argument('--mixup', action='store_true', default=False, 
+parser.add_argument('--mixup', action='store_true', default=False,
                     help='whether to use mixup or not')
 parser.add_argument('--mixup_alpha', type=float, default=1.0, help='alpha parameter for mixup')
 parser.add_argument('--learning_rate', type=float, default=0.1, help='The Learning Rate.')
@@ -79,12 +79,12 @@ def adjust_learning_rate(optimizer, epoch, gammas, schedule):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr
-  
+
 if dataname=='cifar10':
     C =  eval(args.model_type)(args.mixup_hidden,args.initial_channels,10)
 elif dataname=='cifar100':
     C =  eval(args.model_type)(args.mixup_hidden,args.initial_channels,100)
-    
+
 if torch.cuda.is_available():
     C = C.cuda()
 
@@ -103,7 +103,7 @@ elif dataname=="cifar100":
     validation_loader = test_loader
 
 def plot(exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_list):
-    
+
     plt.plot(np.asarray(train_loss_list), label='train_loss')
     plt.xlabel('evaluation step')
     plt.ylabel('metrics')
@@ -111,7 +111,7 @@ def plot(exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_lis
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(exp_dir, 'train_loss.png' ))
     plt.clf()
-    
+
     plt.plot(np.asarray(train_acc_list), label='train_acc')
     plt.xlabel('evaluation step')
     plt.ylabel('metrics')
@@ -119,7 +119,7 @@ def plot(exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_lis
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(exp_dir, 'train_acc.png' ))
     plt.clf()
-    
+
     plt.plot(np.asarray(test_loss_list), label='test_loss')
     plt.xlabel('evaluation step')
     plt.ylabel('metrics')
@@ -127,7 +127,7 @@ def plot(exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_lis
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(exp_dir, 'test_loss.png' ))
     plt.clf()
-    
+
     plt.plot(np.asarray(test_acc_list), label='test_acc')
     plt.xlabel('evaluation step')
     plt.ylabel('metrics')
@@ -174,9 +174,6 @@ for epoch in range(args.epochs):
     total =0
     C.train()
     for i, (input, target) in enumerate(train_loader):
-            #print (input.shape)
-            #print (target.shape)
-            #break
             if args.mixup:
                 lam = mixup_data(args.mixup_alpha)
                 if args.cuda:
@@ -200,17 +197,17 @@ for epoch in range(args.epochs):
             train_loss += loss.data[0]*target.size(0)
             _, pred = torch.max(output.data, 1)
             if args.mixup:
-                correct += pred.eq(target.data.view_as(pred)).cpu().sum()## TODO: target label sum of two target_a and target_b   
+                correct += pred.eq(target.data.view_as(pred)).cpu().sum()## TODO: target label sum of two target_a and target_b
             else:
-                correct += pred.eq(target.data.view_as(pred)).cpu().sum() 
+                correct += pred.eq(target.data.view_as(pred)).cpu().sum()
             total += target.size(0)
     train_loss = train_loss/total
     train_loss_list.append(train_loss)
-    print (epoch, "======epoch========")
-    print ('Train:loss= {:.3f} accuracy={:.3f}%'.format(train_loss,  100.*correct.item()/float(total)))
-    
+    print epoch, "======epoch========"
+    print 'Train:loss= {:.3f} accuracy={:.3f}%'.format(train_loss,  100.*correct/total)
+
     C.eval()
-    
+
     def run_from_loader(loader,loss_lst=[], acc_lst=[]):
         t_loss = 0
         correct = 0
@@ -219,7 +216,7 @@ for epoch in range(args.epochs):
             if args.cuda:
                 data, target = data.cuda(), target.cuda()
             data, target = Variable(data, volatile=True), Variable(target)
-            
+
             output = C(data)
             loss = criterion(output, target)
 
@@ -230,35 +227,35 @@ for epoch in range(args.epochs):
 
         t_loss /= total
         loss_lst.append(t_loss)
-        t_accuracy = 100. * correct.item() / float(total)
+        t_accuracy = 100. * correct / total
         acc_lst.append(t_accuracy)
 
         return t_loss, t_accuracy
 
 
-    if args.fraction_validation > 0.0:
+    if args.valid_labels_per_class:
         valid_loss, valid_accuracy = run_from_loader(valid_loader)
         out_str = 'Valid: loss={:.4f}, accuracy={:.3f}%'.format(valid_loss, valid_accuracy)
-        print (out_str)
+        print out_str
     test_loss, test_accuracy = run_from_loader(test_loader, test_loss_list, test_acc_list)
     out_str = 'Test: loss={:.4f}, accuracy={:.3f}%'.format(test_loss, test_accuracy)
-    print (out_str)
+    print out_str
 
-    if args.fraction_validation > 0.0:
+    if args.valid_labels_per_class:
         if valid_accuracy > best_val_acc:
             best_val_acc = valid_accuracy
             best_test_acc = test_accuracy
-    
+
         out_str = 'At best val accuracy={:.3f}%'.format(best_val_acc)
-        print (out_str)
+        print out_str
         out_str = 'Best Test accuracy={:.3f}%'.format(best_test_acc)
-        print (out_str)
+        print out_str
     else:
         if test_accuracy > best_test_acc:
             best_test_acc = test_accuracy
         out_str = 'Best Test accuracy={:.3f}%'.format(best_test_acc)
-        print (out_str)
- 
+        print out_str
+
     if args.run_analytical:
         run_test_with_mixup(args, C, test_loader,mix_rate=0.5,mix_layer=0)
         run_test_with_mixup(args, C, test_loader,mix_rate=0.5,mix_layer=2)
@@ -268,11 +265,9 @@ for epoch in range(args.epochs):
 
     if args.save_model:
         torch.save(C, 'saved_models/%s.pt' % args.model_name)
-        
+
     if epoch%2==0:
         if args.mixup:
             plot(args.exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_list)
         else:
             plot(args.exp_dir, train_loss_list,  train_acc_list, test_loss_list, test_acc_list)
-    
-
