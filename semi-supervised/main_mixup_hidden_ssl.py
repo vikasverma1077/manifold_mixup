@@ -50,7 +50,7 @@ parser.add_argument('--alpha_max_at_factor', type=float, default=0.4, help='frac
 parser.add_argument('--net_type', default='WRN28_2', type=str, help='either of WRN28_2, WRN28_10')
 parser.add_argument('--dataset', default='cifar10', type=str, help='dataset = [cifar10/svhn]')
 parser.add_argument('--schedule', type=int, nargs='+', default=[60, 120, 160], help='Decrease learning rate at these epochs.')
-parser.add_argument('--gammas', type=float, nargs='+', default=[0.2, 0.2, 0.2], help='LR is multiplied by gamma on schedule, number of gammas should be equal to schedule')
+parser.add_argument('--gammas', type=float, nargs='+', default=[0.1, 0.1, 0.1], help='LR is multiplied by gamma on schedule, number of gammas should be equal to schedule')
 parser.add_argument('--exp_dir', type = str, default = 'exp',
                         help='folder where results are to be stored')
 parser.add_argument('--data_dir', type = str, default = '../data/cifar10/',

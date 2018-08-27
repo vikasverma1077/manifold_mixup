@@ -1,41 +1,48 @@
 from torch.autograd import Variable
 import torch
 import numpy as np
+from utils import to_one_hot
 
-def run_test_with_mixup(cuda, C, loader,mix_rate,mix_layer):
+criterion = torch.nn.CrossEntropyLoss()
+
+def mixup_criterion(y_a, y_b, lam):
+    return lambda criterion, pred: lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
+def run_test_with_mixup(cuda, C, loader,mix_rate,mix_layer,num_trials=1):
     correct = 0
     total = 0
 
     loss = 0.0
     softmax = torch.nn.Softmax()
-    bce_loss = torch.nn.BCELoss()
-
+    bce_loss = torch.nn.CrossEntropyLoss()#torch.nn.BCELoss()
 
     lam = np.array(mix_rate)
     lam = Variable(torch.from_numpy(np.array([lam]).astype('float32')).cuda())
 
-    for batch_idx, (data, target) in enumerate(loader):
-        if cuda:
-            data, target = data.cuda(), target.cuda()
-        data, target = Variable(data, volatile=True), Variable(target)
+    for i in range(0,num_trials):
+        for batch_idx, (data, target) in enumerate(loader):
+            if cuda:
+                data, target = data.cuda(), target.cuda()
+            data, target = Variable(data, volatile=True), Variable(target)
 
-        output,reweighted_target = C(data, lam=lam, target=target, layer_mix=mix_layer)
-        #loss = criterion(output, target)
+            output,reweighted_target = C(data, lam=lam, target=target, layer_mix=mix_layer)
 
-        # t_loss += loss.data[0]*target.size(0) # sum up batch loss
-        pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
-        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
-        total += target.size(0)
-        
-        loss += bce_loss(softmax(output), reweighted_target)
+            '''take original with probability lam.  First goal is to recover the target indices for the other batch.  '''
 
-    #t_loss /= total
+            pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
+            correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+            total += target.size(0)
+
+            '''These are the original targets in a one-hot space'''
+            target1_onehot = to_one_hot(target,10)
+
+
+            target2 = (reweighted_target - target1_onehot*(lam)).max(1)[1]
+
+            loss += mixup_criterion(target, target2, lam)(bce_loss,output) * target.size(0)
+
     t_accuracy = 100. * correct / total
-    
-    average_loss = loss / total
 
-    print "Test with mixup", mix_rate, "on layer", mix_layer, ', loss: ', average_loss
-    print "Accuracy", t_accuracy
-        
+    average_loss = (loss / total)
 
-
+    return t_accuracy, average_loss
