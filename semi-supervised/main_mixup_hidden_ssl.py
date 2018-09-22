@@ -5,7 +5,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 import config as cf
-
 import torchvision
 from torchvision import datasets
 import torchvision.transforms as transforms
@@ -80,7 +79,7 @@ print (batch_size, num_updates, num_epochs )
 
 def get_alpha_schedule(x):
   return math.exp(-5*np.power((1-x),2))*args.alpha_max
-  
+
 t = np.linspace(0.0, 1, alpha_max_at)
 alpha =np.ones(num_updates)*args.alpha_max
 for i in range(alpha_max_at):
@@ -158,7 +157,7 @@ result_path = os.path.join(args.exp_dir , 'out.txt')
 filep = open(result_path, 'w',  buffering=0)
 
 out_str = str(args)
-filep.write(out_str + '\n')     
+filep.write(out_str + '\n')
 
 # Training
 update_idx = -1
@@ -171,41 +170,41 @@ def train(epoch):
     nll_loss =0
     correct = 0
     total = 0
-    
+
     if args.optimizer == 'sgd':
         current_learning_rate = adjust_learning_rate(optimizer, epoch, args.gammas, args.schedule)
         print('\n=> Training Epoch #%d, LR=%.4f' %(epoch, current_learning_rate))
-    
+
     batch_idx = -1
     global update_idx
-    
+
     def l1_loss(net):
         l1_reg = None
         for W in net.parameters():
             if l1_reg is None:
                 l1_reg = torch.abs(W).sum()
         return l1_reg
-    
+
     for (inputs, targets), (u, _) in zip(cycle(trainloader), unlabelledloader):
         if inputs.shape[0]!= u.shape[0]:
             bt_size = np.minimum(inputs.shape[0], u.shape[0])
             inputs = inputs[0:bt_size]
             targets = targets[0:bt_size]
             u = u[0:bt_size]
-        
-        
+
+
         if args.dataset == 'cifar10':
             inputs = apply_zca(inputs, zca_mean, zca_components)
             u = apply_zca(u, zca_mean, zca_components)
-        
-        
+
+
         inputs_temp = inputs
         inputs_temp = inputs.cuda()
         inputs_temp = Variable(inputs_temp)
-        
+
         batch_idx +=1
         update_idx +=1
-        
+
         ## get the supervised loss: mixup or no-mixup based
         if args.mixup_sup:
                 inputs, targets, u  = inputs.cuda(), targets.cuda(), u.cuda()
@@ -216,25 +215,25 @@ def train(epoch):
                 lam = lam.data.cpu().numpy().item()
                 loss_func = mixup_criterion(target_a, target_b, lam)
                 loss_supervised = loss_func(criterion_l, outputs)
-               
+
         else:
             if use_cuda:
                 targets = targets.cuda()
                 inputs = inputs.cuda()
                 u = u.cuda()
-             
+
             inputs = torch.autograd.Variable(inputs)
             targets = torch.autograd.Variable(targets)
             u = torch.autograd.Variable(u)
-            
+
             outputs = net(inputs, mixup =False)
             loss_supervised = criterion_l(outputs, targets)
-        
-            
+
+
         ### the unsupervised loss###
-        
+
         outputs_u = net(u, mixup = False)
-        
+
         if args.mixup_usup:
                 output, target_a, target_b, lam = net(x=u, y= outputs_u, mixup_hidden = args.mixup_usup_hidden, mixup_alpha=args.mixup_alpha_usup)
                 mixedup_target = target_a*lam.expand_as(target_a) + target_b*(1-lam.expand_as(target_b))
@@ -243,8 +242,8 @@ def train(epoch):
                 loss = loss_supervised + alpha[update_idx].item()*loss_unsupervised
         else:
             loss = loss_supervised
-        
-        l1_reg = l1_loss(net)    
+
+        l1_reg = l1_loss(net)
         loss = loss + 0.001*l1_reg
         optimizer.zero_grad()
         loss.backward()  # Backward Propagation
@@ -253,27 +252,27 @@ def train(epoch):
         train_loss += loss.data[0]*targets.size(0)
         train_loss_sup += loss_supervised.data[0]*targets.size(0)
         train_loss_usup += loss_unsupervised.data[0]*targets.size(0)
-        
+
         outputs = net(inputs_temp, mixup = False)
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
         nll_loss += nll(m(outputs), targets).data[0]*targets.size(0)
-        
+
         outputs=net(u, mixup = False)
-        
+
         unsup_alpha = alpha[update_idx].item()
         sys.stdout.write('\r')
         sys.stdout.write('| Epoch [%3d/%3d] Iter[%3d/%3d]\t\tLoss: %.4f  NLLLoss: %.4f Acc@1: %.3f unsup_alpha: %.6f%%'
                 %(epoch, num_epochs, batch_idx+1,
                     (len_data//batch_size)+1, train_loss/total, nll_loss/total,  100.*correct/total, unsup_alpha ))
         sys.stdout.flush()
-    
+
     filep.write('| Epoch [%3d/%3d] Iter[%3d/%3d]\t\tLoss: %.4f SupLoss: %.4f UsupLoss: %.4f NLLLoss: %.4f Acc@1: %.3f%%'
                 %(epoch, num_epochs, batch_idx+1,
-                    (len_data//batch_size)+1, train_loss/total,train_loss_sup/total,train_loss_usup/total, nll_loss/total, 100.*correct/total)+'\n')    
-        
-best_test_acc =0.0      
+                    (len_data//batch_size)+1, train_loss/total,train_loss_sup/total,train_loss_usup/total, nll_loss/total, 100.*correct/total)+'\n')
+
+best_test_acc =0.0
 def test(epoch):
     global best_val_acc
     global best_test_acc
@@ -285,7 +284,7 @@ def test(epoch):
     for batch_idx, (inputs, targets) in enumerate(validloader):
         if args.dataset == 'cifar10':
             inputs = apply_zca(inputs, zca_mean, zca_components)
-        
+
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
         inputs, targets = Variable(inputs, volatile=True), Variable(targets)
@@ -329,7 +328,7 @@ def test(epoch):
             inputs, targets = Variable(inputs, volatile=True), Variable(targets)
             outputs = net(inputs, mixup=False)
             loss = criterion_l(outputs, targets)
-    
+
             test_loss += loss.data[0]*targets.size(0)
             _, predicted = torch.max(outputs.data, 1)
             total += targets.size(0)
@@ -341,7 +340,7 @@ def test(epoch):
         best_nll_loss = nll_loss/total
         print("\n| Best Test Acc: Epoch #%d\t\t\tLoss: %.4f NLLLoss: %.4f Acc@1: %.2f%%" %(epoch, test_loss/total, best_nll_loss, acc))
         filep.write("\n| Best Test Acc: Epoch #%d\t\t\tLoss: %.4f NLLLoss: %.4f Acc@1: %.2f%%" %(epoch, test_loss/total, best_nll_loss, acc)+'\n')
-        
+
 
 
 print('\n[Phase 3] : Training model')
@@ -360,5 +359,5 @@ for epoch in range(start_epoch, start_epoch+num_epochs):
     epoch_time = time.time() - start_time
     elapsed_time += epoch_time
     print('| Elapsed time : %d:%02d:%02d'  %(cf.get_hms(elapsed_time)))
-    
+
 filep.close()
