@@ -6,7 +6,7 @@ torchvision 0.2.0
 
 ### Data Preprocessing
 
-Run the script python cifar10_zca.py to compute and save the ZCA for CIFAR10 in the folder ../data/cifar10/ 
+The precomputed zca files are in ../data/cifar10/ . You can compute it yourself also by running the script python cifar10_zca.py to compute and save the ZCA for CIFAR10 in the folder ../data/cifar10/ 
 
 
 ## For running Semi-supervised Manifold mixup for Cifar10
