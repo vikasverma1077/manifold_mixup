@@ -15,7 +15,7 @@ If you find this work useful and use it on your own research, please cite our [p
 ```
 @article{manifold_mixup,
   title={Manifold Mixup: Encouraging Meaningful On-Manifold Interpolation as a Regularizer},
-  author={Verma, Vikas and Lamb, Alex and Beckham, Christopher and Courville, Aaron  and  Mitliagkis, Ioannis and Bengio, Yoshua},
+  author={Verma, Vikas and Lamb, Alex and Beckham, Christopher and Najafi, Amir and Courville, Aaron  and  Mitliagkis, Ioannis and Bengio, Yoshua},
   journal={arXiv preprint arXiv:1806.05236v1},
   year={2018}
 }
