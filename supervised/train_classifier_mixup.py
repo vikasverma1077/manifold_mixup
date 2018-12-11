@@ -150,7 +150,7 @@ def mixup_criterion(y_a, y_b, lam):
 
 criterion = torch.nn.CrossEntropyLoss()
 mse_loss = nn.MSELoss()
-optimizer = torch.optim.SGD(C.parameters(), lr=0.001, momentum=0.9, weight_decay=args.weight_decay, nesterov=args.nesterov)
+optimizer = torch.optim.SGD(C.parameters(), lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay, nesterov=args.nesterov)
 
 train_loss_list = []
 train_acc_list = []
