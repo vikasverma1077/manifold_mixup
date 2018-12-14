@@ -1,5 +1,7 @@
 # GAN mixup
 
+**NOTE: This code base has gone through some major changes since its initial submission to NIPS. It will be updated soon, but for now, this is the old code.**
+
 Official PyTorch implementation of 
 [Manifold Mixup: Encouraging Meaningful On-Manifold Interpolation as a Regularizer](https://arxiv.org/abs/1611.04076).
 
@@ -20,12 +22,7 @@ It is worth noting that this specific formulation in the visible mixup case, i.e
 
 ### How to train
 
-The `exps` folder contains the experiments needed to reproduce the experiments in the paper. There is a non-trivial amount of variance in the Inception score between runs so we suggest you run each experiment at least thrice.
-
-* `exps/baseline.specnorm.sh`: this is a strong baseline using the [spectral normalisation](https://arxiv.org/abs/1802.05957) proposed by Miyato et al (2018). After 500 epochs this achieved an average (over three runs) Inception score of 7.94 +/- 0.08, and an average FID of 21.7.
-* `exps/baseline.specnorm.hinge.sh`: (another strong baseline) this is the best result from the spectral normalisation paper, where they were able to obtain a better Inception score by using the hinge loss. After 500 epochs we achieved 7.97 +/- 0.10 with an average FID of 22.2.
-* `exps/visible.dnorm0.specnorm.sh`: this is visible (pixel-space) mixup using spectral norm. We obtained 8.00 +/- 0.08 with an FID of 21.5.
-* `exps/hidden.dnorm0.5.pp.sh`: hidden space mixup using gradient norm penalty of 0.5 and using (as the hidden layer) a small convolution inserted before the resblocks of the discriminator.
+TODO
 
 ### How to evaluate
 
