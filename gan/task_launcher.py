@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import torch
 from torch.autograd import Variable, grad
@@ -7,6 +8,7 @@ import argparse
 import glob
 from mugan import MUGAN
 from skimage.io import imsave
+from importlib import import_module
 
 def dump_samples_to_disk(folder, how_many, bs):
     if not os.path.exists(folder):
@@ -166,11 +168,15 @@ def parse_args():
     return args
 
 args = parse_args()
-# Dynamically load network module.
-net_module = imp.load_source('network', args.network)
+
+# Dynamically import network module.
+net_module = import_module(args.network.replace("/", ".").\
+                           replace(".py", ""))
 gen_fn, disc_fn = getattr(net_module, 'get_network')(args.z_dim)
+
 # Dynamically load iterator module.
-itr_module = imp.load_source('iterator', args.iterator)
+itr_module = import_module(args.iterator.replace("/", ".").\
+                           replace(".py", ""))
 itr = getattr(itr_module, 'get_iterators')(args.batch_size)
 
 gan_class = MUGAN
@@ -206,9 +212,10 @@ if args.resume is not None:
                   latest_model)
             net.load(latest_model, legacy=args.legacy)
     else:
-        ignore_d = True if args.interactive is not None else False
-        net.load(args.resume, legacy=args.legacy,
-                 ignore_d=ignore_d)
+        #ignore_d = True if args.interactive is not None else False
+        #net.load(args.resume, legacy=args.legacy,
+        #         ignore_d=ignore_d)
+        net.load(args.resume, legacy=args.legacy)
     if args.last_epoch is not None:
         net.last_epoch = args.last_epoch
 if args.interactive is not None:

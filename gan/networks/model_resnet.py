@@ -2,12 +2,10 @@
 from torch import nn
 import torch.nn.functional as F
 
-from networks.spectral_normalization import SpectralNorm
+from .spectral_normalization import SpectralNorm
 import numpy as np
 
-
 channels = 3
-
 
 class ResBlockGenerator(nn.Module):
 
@@ -82,9 +80,6 @@ class ResBlockDiscriminator(nn.Module):
             #         SpectralNorm(nn.Conv2d(in_channels,out_channels, 1, 1, padding=0)),
             #         nn.AvgPool2d(2, stride=stride, padding=0)
             #     )
-        else:
-            self.bypass = nn.Conv2d(in_channels,out_channels, 1, 1, padding=0)
-
 
     def forward(self, x):
         return self.model(x) + self.bypass(x)
@@ -122,11 +117,8 @@ class FirstResBlockDiscriminator(nn.Module):
     def forward(self, x):
         return self.model(x) + self.bypass(x)
 
-GEN_SIZE=128
-DISC_SIZE=128
-
 class Generator(nn.Module):
-    def __init__(self, z_dim):
+    def __init__(self, z_dim, GEN_SIZE=128):
         super(Generator, self).__init__()
         self.z_dim = z_dim
 
@@ -144,11 +136,13 @@ class Generator(nn.Module):
             self.final,
             nn.Tanh())
 
+        self.GEN_SIZE = GEN_SIZE
+
     def forward(self, z):
-        return self.model(self.dense(z).view(-1, GEN_SIZE, 4, 4))
+        return self.model(self.dense(z).view(-1, self.GEN_SIZE, 4, 4))
 
 class Discriminator(nn.Module):
-    def __init__(self, spec_norm=False, sigmoid=False):
+    def __init__(self, spec_norm=False, sigmoid=False, DISC_SIZE=128):
         super(Discriminator, self).__init__()
 
         if spec_norm:
@@ -174,6 +168,7 @@ class Discriminator(nn.Module):
         if sigmoid:
             self.sigm = nn.Sigmoid()
         self.sigmoid = sigmoid
+        self.DISC_SIZE = DISC_SIZE
 
     def forward(self, x):
         """
@@ -192,10 +187,10 @@ class Discriminator(nn.Module):
         assert idx in [0,1]
         if idx == 0:
             # hs == the result of self._init
-            result = self.fc(self.model(self._init2(hs)).view(-1,DISC_SIZE))
+            result = self.fc(self.model(self._init2(hs)).view(-1,self.DISC_SIZE))
         else:
             # hs == the result of self._init2
-            result = self.fc(self.model(hs).view(-1,DISC_SIZE))
+            result = self.fc(self.model(hs).view(-1,self.DISC_SIZE))
         if self.sigmoid:
             return self.sigm(result)
         else:
