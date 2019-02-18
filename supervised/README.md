@@ -1,4 +1,4 @@
-# Manifold_mixup_anon
+# Manifold_mixup Supervised
 
 ### Requirements
 This code has been tested with  
