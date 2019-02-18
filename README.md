@@ -16,11 +16,23 @@ The repo consist of three subfolders for Supervised Learning, Semi-Supervised Le
 If you find this work useful and use it on your own research, please cite our [paper](https://arxiv.org/abs/1806.05236). 
 
 ```
-@article{manifold_mixup,
-  title={Manifold Mixup: Encouraging Meaningful On-Manifold Interpolation as a Regularizer},
-  author={Verma, Vikas and Lamb, Alex and Beckham, Christopher and Najafi, Amir and Courville, Aaron  and  Mitliagkis, Ioannis and Bengio, Yoshua},
-  journal={arXiv preprint arXiv:1806.05236v1},
-  year={2018}
+@ARTICLE{verma2018manifold,
+       author = {{Verma}, Vikas and {Lamb}, Alex and {Beckham}, Christopher and
+         {Najafi}, Amir and {Mitliagkas}, Ioannis and {Courville}, Aaron and
+         {Lopez-Paz}, David and {Bengio}, Yoshua},
+        title = "{Manifold Mixup: Better Representations by Interpolating Hidden States}",
+      journal = {arXiv e-prints},
+     keywords = {Statistics - Machine Learning, Computer Science - Artificial Intelligence, Computer Science - Machine Learning, Computer Science - Neural and Evolutionary Computing},
+         year = "2018",
+        month = "Jun",
+          eid = {arXiv:1806.05236},
+        pages = {arXiv:1806.05236},
+archivePrefix = {arXiv},
+       eprint = {1806.05236},
+ primaryClass = {stat.ML},
+       adsurl = {https://ui.adsabs.harvard.edu/\#abs/2018arXiv180605236V},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
+
 ```
 
