@@ -1,6 +1,5 @@
 # Manifold_mixup
-This repo consists Pytorch code for the paper Manifold Mixup: Encouraging Meaningful
-On-Manifold Interpolation as a Regularizer (https://arxiv.org/abs/1806.05236)
+This repo consists Pytorch code for the paper Manifold Mixup: Better Representations by Interpolating Hidden States (https://arxiv.org/abs/1806.05236)
 
 The goal of our proposed algorithm, Manifold Mixup, is to learn robust features by interpolating the hidden states of examples. The representations learned by our method are more discriminative and compact as shown in the below figure.  Please refer to Figure 1 and Figure 2 of our [paper](https://arxiv.org/abs/1806.05236) for more details.
 
