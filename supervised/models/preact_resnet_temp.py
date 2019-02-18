@@ -1,10 +1,16 @@
+# forward pass to model returns target_a and target_b
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 import torch.nn.functional as F
-
 from torch.autograd import Variable
-from utils import to_one_hot, mixup_process
+
+import sys, os
+import numpy as np
 import random
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils import mixup_data
+from load_data import per_image_standardization
 
 class PreActBlock(nn.Module):
     '''Pre-activation version of the BasicBlock.'''
@@ -60,12 +66,11 @@ class PreActBottleneck(nn.Module):
 
 
 class PreActResNet(nn.Module):
-    def __init__(self, block, num_blocks, mixup_hidden, initial_channels, num_classes):
+    def __init__(self, block, num_blocks, initial_channels, num_classes, per_img_std= False):
         super(PreActResNet, self).__init__()
         self.in_planes = initial_channels
-
-        self.mixup_hidden = mixup_hidden
         self.num_classes = num_classes
+        self.per_img_std = per_img_std		
 
         self.conv1 = nn.Conv2d(3, initial_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.layer1 = self._make_layer(block, initial_channels, num_blocks[0], stride=1)
@@ -95,8 +100,69 @@ class PreActResNet(nn.Module):
         out = self.layer2(out)
         return out
 
-    def forward(self, x, lam=None, target=None, target_reweighted=None, layer_mix='rand'):
+    def forward(self, x, target=None, mixup_hidden = False,  mixup_alpha = 0.1, layer_mix=None):
 
+        if self.per_img_std:
+            x = per_image_standardization(x)
+            
+        if mixup_hidden == True:
+            if layer_mix == None:
+                layer_mix = random.randint(0,2)
+
+            out = x
+            
+            if layer_mix == 0:
+                out, y_a, y_b, lam = mixup_data(out, target, mixup_alpha)
+            
+            out = self.conv1(x)
+            
+            out = self.layer1(out)
+    
+            if layer_mix == 1:
+                out, y_a, y_b, lam = mixup_data(out, target, mixup_alpha)
+            
+            out = self.layer2(out)
+    
+            if layer_mix == 2:
+                out, y_a, y_b, lam = mixup_data(out, target, mixup_alpha)
+           
+            out = self.layer3(out)
+            
+            if layer_mix == 3:
+                out, y_a, y_b, lam = mixup_data(out, target, mixup_alpha)
+            
+            
+            
+            out = self.layer4(out)
+            
+            if layer_mix == 4:
+                out, y_a, y_b, lam = mixup_data(out, target, mixup_alpha)
+            
+            
+            out = F.avg_pool2d(out, 4)
+            out = out.view(out.size(0), -1)
+            out = self.linear(out)            
+            #if layer_mix == 4:
+            #    out, y_a, y_b, lam = mixup_data(out, target, mixup_alpha)
+
+            lam = torch.tensor(lam).cuda()
+            lam = lam.repeat(y_a.size())
+            return out, y_a, y_b, lam
+
+        
+        else:
+            out = x
+            out = self.conv1(x)
+            out = self.layer1(out)
+            out = self.layer2(out)
+            out = self.layer3(out)
+            out = self.layer4(out)
+            out = F.avg_pool2d(out, 4)
+            out = out.view(out.size(0), -1)
+            out = self.linear(out)
+            return out
+
+        """
         if layer_mix == 'rand':
             if self.mixup_hidden:
                 layer_mix = random.randint(0,2)
@@ -106,6 +172,7 @@ class PreActResNet(nn.Module):
         out = x
 
         if lam is not None:
+            lam = torch.max(lam, 1-lam)
             if target_reweighted is None:
                 target_reweighted = to_one_hot(target,self.num_classes)
             else:
@@ -134,22 +201,23 @@ class PreActResNet(nn.Module):
             return out
         else:
             return out, target_reweighted
+	"""
 
 
-def PreActResNet18(mixup_hidden,initial_channels,num_classes):
-    return PreActResNet(PreActBlock, [2,2,2,2],mixup_hidden,initial_channels,num_classes)
+def preactresnet18(num_classes=10, dropout = False, per_img_std = False):
+    return PreActResNet(PreActBlock, [2,2,2,2], 64, num_classes, per_img_std)
 
-def PreActResNet34(mixup_hidden,initial_channels,num_classes):
-    return PreActResNet(PreActBlock, [3,4,6,3],mixup_hidden,initial_channels,num_classes)
+def preactresnet34(num_classes=10, dropout = False, per_img_std = False):
+    return PreActResNet(PreActBlock, [3,4,6,3], 64, num_classes, per_img_std)
 
-def PreActResNet50(mixup_hidden,initial_channels,num_classes):
-    return PreActResNet(PreActBottleneck, [3,4,6,3],mixup_hidden,initial_channels,num_classes)
+def preactresnet50(num_classes=10, dropout = False, per_img_std = False):
+    return PreActResNet(PreActBottleneck, [3,4,6,3], 64, num_classes, per_img_std)
 
-def PreActResNet101(mixup_hidden,initial_channels,num_classes):
-    return PreActResNet(PreActBottleneck, [3,4,23,3],mixup_hidden,initial_channels,num_classes)
+def preactresnet101(num_classes=10, dropout = False, per_img_std = False):
+    return PreActResNet(PreActBottleneck, [3,4,23,3], 64, num_classes, per_img_std)
 
-def PreActResNet152(mixup_hidden,initial_channels,num_classes):
-    return PreActResNet(PreActBottleneck, [3,8,36,3],mixup_hidden,initial_channels,num_classes)
+def preactresnet152(num_classes=10, dropout = False, per_img_std = False):
+    return PreActResNet(PreActBottleneck, [3,8,36,3], 64, num_classes, per_img_std)
 
 
 def test():

@@ -1,3 +1,4 @@
+
 from torch.autograd import Variable
 import torch
 import numpy as np
@@ -30,19 +31,30 @@ def run_test_with_mixup(cuda, C, loader,mix_rate,mix_layer,num_trials=1):
             '''take original with probability lam.  First goal is to recover the target indices for the other batch.  '''
 
             pred = output.data.max(1, keepdim=True)[1] # get the index of the max log-probability
-            correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+            correct += pred.eq(target.data.view_as(pred)).cpu().numpy().sum()
             total += target.size(0)
 
             '''These are the original targets in a one-hot space'''
             target1_onehot = to_one_hot(target,10)
 
+            #print lam
+            #print reweighted_target[0:3]
 
             target2 = (reweighted_target - target1_onehot*(lam)).max(1)[1]
 
+            #print "reweighted target should put probability", lam, "on first set of indexed-values"
+            #print target[0:3]
+            #print target2[0:3]
+
             loss += mixup_criterion(target, target2, lam)(bce_loss,output) * target.size(0)
 
+    #t_loss /= total
     t_accuracy = 100. * correct / total
-
+    
     average_loss = (loss / total)
 
+    #print "Test with mixup", mix_rate, "on layer", mix_layer, ', loss: ', average_loss
+    #print "Accuracy", t_accuracy
+
     return t_accuracy, average_loss
+
