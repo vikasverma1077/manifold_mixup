@@ -4,7 +4,7 @@ This repo consists Pytorch code for the paper Manifold Mixup: Better Representat
 The goal of our proposed algorithm, Manifold Mixup, is to learn robust features by interpolating the hidden states of examples. The representations learned by our method are more discriminative and compact as shown in the below figure.  Please refer to Figure 1 and Figure 2 of our [paper](https://arxiv.org/abs/1806.05236) for more details.
 
 <p align="center">
-    <img src="hstates_3.png" height="300">
+    <img src="hstates_3.png" height="600">
 </p>
 
 The repo consist of three subfolders for Supervised Learning, Semi-Supervised Learning and GAN experiments. Each subfolder is self-contained (can be used independently of the other subfolders). Each subfolder has its own instruction on "How to run" in its README.md file.
