@@ -14,7 +14,7 @@ scipy==1.1.0
 seaborn==0.9.0  
 six==1.12.0  
 
-### Important :Running each of the following commands will automatically create a subdirectory containing the output of that particular expeiment in the manifold_mixup/experiments directory
+### Important :Running each of the following commands will automatically create a subdirectory containing the output of that particular expeiment in the manifold_mixup/supervised/experiments directory
 
 ### How to run experiments for CIFAR10
 
