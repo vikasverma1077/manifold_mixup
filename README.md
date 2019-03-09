@@ -11,7 +11,7 @@ The goal of our proposed algorithm, Manifold Mixup, is to learn robust features 
     <img src="mmfig2.png" height="300">
 </p>
 
-The repo consist of three subfolders for Supervised Learning, Semi-Supervised Learning and GAN experiments. Each subfolder is self-contained (can be used independently of the other subfolders). Each subfolder has its own instruction on "How to run" in its README.md file.
+The repo consist of two subfolders for Supervised Learning and GAN experiments. Each subfolder is self-contained (can be used independently of the other subfolders). Each subfolder has its own instruction on "How to run" in its README.md file.
 
 If you find this work useful and use it on your own research, please cite our [paper](https://arxiv.org/abs/1806.05236). 
 
@@ -35,4 +35,5 @@ archivePrefix = {arXiv},
 }
 
 ```
+
 
