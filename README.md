@@ -35,5 +35,5 @@ archivePrefix = {arXiv},
 }
 
 ```
-
+Note: Please refer to our new repo for Interpolation based Semi-supervised Learning https://github.com/vikasverma1077/ICT
 
