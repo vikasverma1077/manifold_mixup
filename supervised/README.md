@@ -163,7 +163,7 @@ python main.py --dataset svhn --data_dir data/svhn/ --root_dir experiments/ --la
 ### How to run experiments for Tiny-Imagenet-200
 
 1.Download the zipped data from https://tiny-imagenet.herokuapp.com/  
-2.If not already exiting, create a subfolder "data" in root folder "manifold_mixup"  
+2.If not already existing, create a subfolder "data" in root folder "manifold_mixup"  
 3.Extract the zipped data in folder manifold_mixup/data  
 4.Run the following script (This will arange the validation data in the format required by the pytorch loader)
 ```
