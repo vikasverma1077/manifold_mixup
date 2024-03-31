@@ -98,13 +98,14 @@ class PreActResNet(nn.Module):
         out = self.layer2(out)
         return out
 
-    def forward(self, x, target= None, mixup=False, mixup_hidden=False, mixup_alpha=None):
+    def forward(self, x, target= None, mixup=False, mixup_hidden=False, mixup_alpha=None, layer_mix=None):
         #import pdb; pdb.set_trace()
         if self.per_img_std:
             x = per_image_standardization(x)
         
         if mixup_hidden:
-            layer_mix = random.randint(0,2)
+            if layer_mix == None:
+                layer_mix = random.randint(0,3)
         elif mixup:
             layer_mix = 0
         else:

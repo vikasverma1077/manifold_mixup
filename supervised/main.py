@@ -16,6 +16,8 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
+import heapq
+
 from utils import *
 import models
 
@@ -32,6 +34,8 @@ from plots import *
 from analytical_helper_script import run_test_with_mixup
 #from attacks import run_test_adversarial, fgsm, pgd
 
+def list_of_ints(arg):
+    return list(map(int, arg.split(',')))
 
 model_names = sorted(name for name in models.__dict__
   if name.islower() and not name.startswith("__")
@@ -53,6 +57,7 @@ parser.add_argument('--initial_channels', type=int, default=64, choices=(16,64))
 # Optimization options
 parser.add_argument('--epochs', type=int, default=300, help='Number of epochs to train.')
 parser.add_argument('--train', type=str, default = 'vanilla', choices =['vanilla','mixup', 'mixup_hidden','cutout'])
+parser.add_argument('--mixup_layer', type=list_of_ints, default=[], help='which layer for mixup')
 parser.add_argument('--mixup_alpha', type=float, default=0.0, help='alpha parameter for mixup')
 parser.add_argument('--cutout', type=int, default=16, help='size of cut out')
 
@@ -80,9 +85,11 @@ parser.add_argument('--workers', type=int, default=2, help='number of data loadi
 parser.add_argument('--manualSeed', type=int, help='manual seed')
 parser.add_argument('--add_name', type=str, default='')
 parser.add_argument('--job_id', type=str, default='')
+parser.add_argument('--whichGPU', type=int, default=0)
 
 args = parser.parse_args()
 args.use_cuda = args.ngpu>0 and torch.cuda.is_available()
+torch.cuda.set_device(args.whichGPU)
 
 out_str = str(args)
 print(out_str)
@@ -173,7 +180,7 @@ def accuracy(output, target, topk=(1,)):
 
     res = []
     for k in topk:
-        correct_k = correct[:k].view(-1).float().sum(0)
+        correct_k = correct[:k].reshape(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
@@ -233,7 +240,13 @@ def train(train_loader, model, optimizer, epoch, args, log):
             
         elif args.train== 'mixup_hidden':
             input_var, target_var = Variable(input), Variable(target)
-            output, reweighted_target = model(input_var, target_var, mixup_hidden= True, mixup_alpha = args.mixup_alpha)
+            mixup_layers=args.mixup_layer
+            output=None
+            reweighted_target=None
+            if len(mixup_layers)==0:
+                output, reweighted_target = model(input_var, target_var, mixup_hidden= True, mixup_alpha = args.mixup_alpha)
+            else:
+                output, reweighted_target = model(input_var, target_var, mixup_hidden= True, mixup_alpha = args.mixup_alpha, layer_mix=mixup_layers[random. randint(0, len(mixup_layers)-1)])
             loss = bce_loss(softmax(output), reweighted_target)#mixup_criterion(target_a, target_b, lam)
             """
             input_var, target_var = Variable(input), Variable(target)
@@ -310,7 +323,7 @@ def validate(val_loader, model, log):
 
   for i, (input, target) in enumerate(val_loader):
     if args.use_cuda:
-      target = target.cuda(async=True)
+      target = target.cuda(non_blocking=True)
       input = input.cuda()
     with torch.no_grad():
         input_var = Variable(input)
@@ -348,7 +361,7 @@ def main():
                     job_id=args.job_id,
                     add_name=args.add_name)
     
-    exp_dir = args.root_dir+exp_name
+    exp_dir = args.root_dir+exp_name+"_layers_"+str(args.mixup_layer)
 
     if not os.path.exists(exp_dir):
             os.makedirs(exp_dir)
@@ -360,7 +373,11 @@ def main():
 
     global best_acc
 
-    log = open(os.path.join(exp_dir, 'log.txt'.format(args.manualSeed)), 'w')
+    log=None
+    if(args.resume):
+        log = open(os.path.join(exp_dir, 'log.txt'.format(args.manualSeed)), 'a')
+    else:
+        log = open(os.path.join(exp_dir, 'log.txt'.format(args.manualSeed)), 'w')
     print_log('save path : {}'.format(exp_dir), log)
     state = {k: v for k, v in args._get_kwargs()}
     print_log(state, log)
@@ -383,10 +400,11 @@ def main():
     #train_loader, valid_loader, _ , test_loader, num_classes = load_data_subset(args.data_aug, args.batch_size, 2, args.dataset, args.data_dir, 0.0, labels_per_class=5000)
     print_log("=> creating model '{}'".format(args.arch), log)
     net = models.__dict__[args.arch](num_classes,args.dropout,per_img_std, stride).cuda()
+    if args.ngpu>1:
+        net = torch.nn.DataParallel(net, device_ids=list(range(args.ngpu)))
     print_log("=> network :\n {}".format(net), log)
     args.num_classes = num_classes
 
-    #net = torch.nn.DataParallel(net, device_ids=list(range(args.ngpu)))
 
     optimizer = torch.optim.SGD(net.parameters(), state['learning_rate'], momentum=state['momentum'],
                 weight_decay=state['decay'], nesterov=True)
@@ -422,6 +440,8 @@ def main():
     test_loss=[]
     test_acc=[]
     
+    conv_min_heap=[]
+    conv_max_heap=[]
     
     for epoch in range(args.start_epoch, args.epochs):
         current_learning_rate = adjust_learning_rate(optimizer, epoch, args.gammas, args.schedule)
@@ -442,8 +462,6 @@ def main():
         train_acc.append(tr_acc)
         test_loss.append(val_los)
         test_acc.append(val_acc)
-        
-
 
         dummy = recorder.update(epoch, tr_los, tr_acc, val_los, val_acc)
 
